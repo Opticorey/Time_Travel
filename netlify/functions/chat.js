@@ -100,6 +100,3 @@ FORMAT: Write in second person for scene descriptions ("You see..."), first pers
   }
 };
 
-export const config = {
-  path: "/.netlify/functions/chat",
-};
