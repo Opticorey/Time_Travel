@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Displaced — A Time Travel Survival Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=IM+Fell+English:ital@0;1&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #f4eed5;
+    --parchment-dark: #e8dfc0;
+    --ink: #2c1810;
+    --ink-faded: #5c4a3a;
+    --ink-light: #8a7560;
+    --red-ink: #8b2500;
+    --gold: #b8860b;
+    --shadow: rgba(44, 24, 16, 0.15);
+    --burn: #3a2a1a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--burn);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* --- TITLE SCREEN --- */
+  #title-screen {
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(184, 134, 11, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 80%, rgba(139, 37, 0, 0.05) 0%, transparent 50%),
+      var(--burn);
+    padding: 2rem;
+    text-align: center;
+    animation: fadeIn 1.5s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .title-ornament {
+    color: var(--gold);
+    font-family: 'IM Fell English', serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.6em;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+  }
+
+  h1.game-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(3rem, 8vw, 6rem);
+    color: var(--parchment);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 20px rgba(184, 134, 11, 0.2);
+  }
+
+  .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    color: var(--ink-light);
+    margin-bottom: 3rem;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  .premise {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    color: #a09080;
+    max-width: 560px;
+    line-height: 1.8;
+    margin-bottom: 3rem;
+    text-align: left;
+    border-left: 2px solid var(--gold);
+    padding-left: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 1.5s ease 0.5s forwards;
+  }
+
+  .premise strong {
+    color: var(--parchment-dark);
+    font-weight: 600;
+  }
+
+  .begin-btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--parchment);
+    background: transparent;
+    border: 1px solid var(--gold);
+    padding: 1rem 3rem;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    opacity: 0;
+    animation: fadeIn 1s ease 1s forwards;
+  }
+
+  .begin-btn:hover {
+    background: var(--gold);
+    color: var(--burn);
+    box-shadow: 0 0 30px rgba(184, 134, 11, 0.3);
+  }
+
+  .begin-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .begin-btn:disabled:hover {
+    background: transparent;
+    color: var(--parchment);
+    box-shadow: none;
+  }
+
+  /* --- GAME SCREEN --- */
+  #game-screen {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    flex-direction: column;
+    background: var(--burn);
+  }
+
+  #game-screen.active {
+    display: flex;
+  }
+
+  .game-header {
+    text-align: center;
+    padding: 1.2rem;
+    border-bottom: 1px solid rgba(184, 134, 11, 0.2);
+    background: rgba(30, 18, 10, 0.9);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .game-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 1.3rem;
+    color: var(--parchment);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .game-header .turn-count {
+    font-family: 'IM Fell English', serif;
+    font-size: 0.75rem;
+    color: var(--ink-light);
+    margin-top: 0.25rem;
+  }
+
+  /* Scroll area */
+  .narrative-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
+    scroll-behavior: smooth;
+  }
+
+  .narrative-scroll::-webkit-scrollbar { width: 6px; }
+  .narrative-scroll::-webkit-scrollbar-track { background: var(--burn); }
+  .narrative-scroll::-webkit-scrollbar-thumb { background: rgba(184, 134, 11, 0.3); border-radius: 3px; }
+
+  /* Message blocks */
+  .msg {
+    animation: msgAppear 0.6s ease;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid rgba(184, 134, 11, 0.08);
+  }
+
+  .msg:last-child { border-bottom: none; }
+
+  @keyframes msgAppear {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.narrator {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    line-height: 1.85;
+    color: #d4c8b0;
+  }
+
+  .msg.narrator p { margin-bottom: 0.8rem; }
+  .msg.narrator p:last-child { margin-bottom: 0; }
+
+  /* Dialogue within narrator text */
+  .msg.narrator em {
+    color: var(--parchment);
+    font-style: italic;
+  }
+
+  .msg.player {
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--gold);
+    padding-left: 1.5rem;
+    border-left: 2px solid rgba(184, 134, 11, 0.3);
+  }
+
+  .msg-label {
+    font-family: 'IM Fell English', serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+  }
+
+  .msg.narrator .msg-label { color: var(--ink-light); }
+  .msg.player .msg-label { color: var(--gold); }
+
+  /* Loading indicator */
+  .loading-msg {
+    padding: 1.5rem 0;
+  }
+
+  .loading-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .loading-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: 0.3;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
+    40% { opacity: 1; transform: scale(1.3); }
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 1rem 2rem 1.5rem;
+    background: rgba(30, 18, 10, 0.95);
+    border-top: 1px solid rgba(184, 134, 11, 0.15);
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    position: sticky;
+    bottom: 0;
+  }
+
+  .input-area textarea {
+    flex: 1;
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--parchment);
+    background: rgba(244, 238, 213, 0.05);
+    border: 1px solid rgba(184, 134, 11, 0.2);
+    border-radius: 4px;
+    padding: 0.8rem 1rem;
+    resize: none;
+    min-height: 48px;
+    max-height: 150px;
+    overflow-y: auto;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .input-area textarea::placeholder {
+    color: var(--ink-light);
+    opacity: 0.5;
+  }
+
+  .input-area textarea:focus {
+    border-color: var(--gold);
+  }
+
+  .send-btn {
+    font-family: 'IM Fell English', serif;
+    font-size: 0.85rem;
+    color: var(--burn);
+    background: var(--gold);
+    border: none;
+    padding: 0.8rem 1.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  .send-btn:hover { background: #d4a017; }
+  .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* --- ERRORS --- */
+  .error-toast {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--red-ink);
+    color: var(--parchment);
+    font-family: 'Cormorant Garamond', serif;
+    padding: 0.8rem 1.5rem;
+    border-radius: 4px;
+    z-index: 100;
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 4s forwards;
+    max-width: 90%;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+
+  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+  /* --- RESPONSIVE --- */
+  @media (max-width: 600px) {
+    .narrative-scroll { padding: 1.2rem; }
+    .input-area { padding: 0.8rem 1rem 1rem; }
+    .msg.narrator { font-size: 1.05rem; }
+  }
+
+  /* Reset / new game button */
+  .reset-btn {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'IM Fell English', serif;
+    font-size: 0.7rem;
+    color: var(--ink-light);
+    background: none;
+    border: 1px solid rgba(138, 117, 96, 0.3);
+    padding: 0.35rem 0.7rem;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    transition: all 0.3s;
+  }
+
+  .reset-btn:hover {
+    color: var(--parchment);
+    border-color: var(--gold);
+  }
+
+  .game-header { position: sticky; top: 0; z-index: 10; }
+  .game-header-inner { position: relative; }
+</style>
+</head>
+<body>
+
+<!-- ========== TITLE SCREEN ========== -->
+<div id="title-screen">
+  <div class="title-ornament">— · — · —</div>
+  <h1 class="game-title">Displaced</h1>
+  <p class="subtitle">A time-travel survival game, powered by Claude</p>
+
+  <div class="premise">
+    The jump went wrong. Not catastrophically — but wrong enough.<br><br>
+    You have <strong>no return coordinates</strong>, no local currency, no contacts. Only what was in your pockets and whatever knowledge lives in your head.<br><br>
+    Somewhere between <strong>500 and 1600 AD</strong>, you open your eyes. You don't know where. You don't know when. You'll have to figure that out — and stay alive long enough to matter.
+  </div>
+
+  <button class="begin-btn" id="begin-btn" onclick="beginGame()">Enter the Unknown</button>
+</div>
+
+<!-- ========== GAME SCREEN ========== -->
+<div id="game-screen">
+  <div class="game-header">
+    <div class="game-header-inner">
+      <h2>Displaced</h2>
+      <div class="turn-count" id="turn-counter">Awaiting arrival…</div>
+      <button class="reset-btn" onclick="resetGame()">New Journey</button>
+    </div>
+  </div>
+
+  <div class="narrative-scroll" id="narrative"></div>
+
+  <div class="input-area">
+    <textarea
+      id="player-input"
+      placeholder="What do you do or say…"
+      rows="1"
+      onkeydown="handleKey(event)"
+      oninput="autoResize(this)"
+    ></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendAction()" disabled>Act</button>
+  </div>
+</div>
+
+<script>
+  // ===== STATE =====
+  let conversationHistory = [];
+  let turnCount = 0;
+  let isLoading = false;
+
+  const API_URL = "/.netlify/functions/chat";
+
+  // ===== DOM =====
+  const titleScreen = document.getElementById("title-screen");
+  const gameScreen = document.getElementById("game-screen");
+  const narrative = document.getElementById("narrative");
+  const playerInput = document.getElementById("player-input");
+  const sendBtn = document.getElementById("send-btn");
+  const turnCounter = document.getElementById("turn-counter");
+
+  // ===== BEGIN =====
+  async function beginGame() {
+    const btn = document.getElementById("begin-btn");
+    btn.disabled = true;
+    btn.textContent = "The world shifts…";
+
+    titleScreen.style.transition = "opacity 0.8s ease";
+    titleScreen.style.opacity = "0";
+
+    await sleep(800);
+    titleScreen.style.display = "none";
+    gameScreen.classList.add("active");
+
+    // First message — just trigger the AI to generate the opening scene
+    await sendToAPI([{ role: "user", content: "I open my eyes. Where am I? What do I see, hear, smell? Who is near me?" }], true);
+  }
+
+  // ===== SEND =====
+  async function sendAction() {
+    const text = playerInput.value.trim();
+    if (!text || isLoading) return;
+
+    playerInput.value = "";
+    autoResize(playerInput);
+
+    // Add player message to UI
+    addMessage("player", text);
+
+    // Add to conversation history
+    conversationHistory.push({ role: "user", content: text });
+
+    await sendToAPI(conversationHistory, false);
+  }
+
+  async function sendToAPI(messages, isOpening) {
+    isLoading = true;
+    sendBtn.disabled = true;
+
+    // Show loading
+    const loadingEl = document.createElement("div");
+    loadingEl.className = "loading-msg";
+    loadingEl.innerHTML = `<div class="loading-dots"><span></span><span></span><span></span></div>`;
+    narrative.appendChild(loadingEl);
+    scrollToBottom();
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+
+      loadingEl.remove();
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Request failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      const responseText = data.response;
+
+      // Add narrator message
+      addMessage("narrator", responseText);
+
+      // Update conversation history
+      if (isOpening) {
+        conversationHistory = [
+          { role: "user", content: messages[0].content },
+          { role: "assistant", content: responseText },
+        ];
+      } else {
+        conversationHistory.push({ role: "assistant", content: responseText });
+      }
+
+      // Keep history manageable — rolling window of recent turns + opening
+      if (conversationHistory.length > 30) {
+        const opening = conversationHistory.slice(0, 2);
+        const recent = conversationHistory.slice(-20);
+        conversationHistory = [...opening, ...recent];
+      }
+
+      turnCount++;
+      turnCounter.textContent = `Turn ${turnCount}`;
+
+    } catch (err) {
+      loadingEl.remove();
+      showError(err.message);
+    }
+
+    isLoading = false;
+    sendBtn.disabled = false;
+    playerInput.focus();
+  }
+
+  // ===== UI HELPERS =====
+  function addMessage(type, text) {
+    const el = document.createElement("div");
+    el.className = `msg ${type}`;
+
+    const label = type === "narrator" ? "the world" : "you";
+
+    if (type === "narrator") {
+      // Convert paragraphs and basic formatting
+      const formatted = text
+        .split(/\n\n+/)
+        .filter(p => p.trim())
+        .map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+        .join("");
+      el.innerHTML = `<div class="msg-label">${label}</div>${formatted}`;
+    } else {
+      el.innerHTML = `<div class="msg-label">${label}</div>${escapeHtml(text)}`;
+    }
+
+    narrative.appendChild(el);
+    scrollToBottom();
+  }
+
+  function scrollToBottom() {
+    requestAnimationFrame(() => {
+      narrative.scrollTop = narrative.scrollHeight;
+    });
+  }
+
+  function showError(msg) {
+    const toast = document.createElement("div");
+    toast.className = "error-toast";
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4500);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  // ===== INPUT HANDLING =====
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendAction();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 150) + "px";
+    sendBtn.disabled = !el.value.trim();
+  }
+
+  // Listen for input to enable/disable send
+  playerInput.addEventListener("input", () => {
+    sendBtn.disabled = !playerInput.value.trim() || isLoading;
+  });
+
+  // ===== RESET =====
+  function resetGame() {
+    if (!confirm("Abandon this timeline and start a new journey?")) return;
+    conversationHistory = [];
+    turnCount = 0;
+    narrative.innerHTML = "";
+    turnCounter.textContent = "Awaiting arrival…";
+    beginGame_fromReset();
+  }
+
+  async function beginGame_fromReset() {
+    await sendToAPI([{ role: "user", content: "I open my eyes. Where am I? What do I see, hear, smell? Who is near me?" }], true);
+  }
+</script>
+
+</body>
+</html>
