@@ -114,7 +114,7 @@ Grounded. Tense. Human. The world is not exotic decoration — it's full of peop
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: data.content[0].text }),
+      body: JSON.stringify({ reply: data.content[0].text }),
     };
   } catch (err) {
     return {
