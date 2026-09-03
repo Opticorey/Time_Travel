@@ -95,7 +95,7 @@ Grounded. Tense. Human. The world is not exotic decoration — it's full of peop
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-5",
         max_tokens: 1024,
         system: SYSTEM_PROMPT,
         messages: trimmedMessages,
