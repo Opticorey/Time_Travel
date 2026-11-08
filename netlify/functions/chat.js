@@ -81,10 +81,29 @@ This is the most important instruction. Your responses must feel like a sharp, a
 
 Grounded. Tense. Human. The world is not exotic decoration — it's full of people with their own concerns, who find this stranger inconvenient or interesting or threatening. Lean into the mundane strangeness of the past. A medieval peasant isn't a fantasy NPC; they're a person who wants to get back to their work.`;
 
-  const ROLLING_WINDOW = 40; // keep last 40 messages to manage context
-  const trimmedMessages = messages.length > ROLLING_WINDOW
-    ? messages.slice(messages.length - ROLLING_WINDOW)
-    : messages;
+  // Keep between 30 and 40 recent messages. Old messages are dropped 10 at a
+  // time (not 2 per turn) so the start of the conversation stays the same for
+  // several turns in a row, which lets Anthropic's prompt cache reuse it.
+  const MAX_WINDOW = 40;
+  const DROP_STEP = 10; // must be even so the window always starts on a player message
+  let start = 0;
+  if (messages.length > MAX_WINDOW) {
+    start = Math.floor((messages.length - (MAX_WINDOW - DROP_STEP)) / DROP_STEP) * DROP_STEP;
+  }
+  const trimmedMessages = messages.slice(start).map((m) => ({
+    role: m.role,
+    content: typeof m.content === "string" ? [{ type: "text", text: m.content }] : m.content,
+  }));
+
+  // Mark the newest message as a cache point. On the next turn, everything up
+  // to here is read from cache at a tenth of the normal input price.
+  const last = trimmedMessages[trimmedMessages.length - 1];
+  if (last && Array.isArray(last.content) && last.content.length) {
+    last.content[last.content.length - 1] = {
+      ...last.content[last.content.length - 1],
+      cache_control: { type: "ephemeral" },
+    };
+  }
 
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -97,7 +116,8 @@ Grounded. Tense. Human. The world is not exotic decoration — it's full of peop
       body: JSON.stringify({
         model: "claude-sonnet-5",
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        // The game rules are identical every turn, so cache them too.
+        system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
         messages: trimmedMessages,
       }),
     });
